@@ -6,30 +6,32 @@
 #include <string>
 #include <vector>
 
-bool validateXML(const std::string &filename) {
-  std::ifstream file(filename);
+using namespace std;
+
+bool validateXML(const string &filename) {
+  ifstream file(filename);
   if (!file.is_open()) {
-    std::cerr << "Error: Could not open XML file: " << filename << std::endl;
+    cerr << "Error: Could not open XML file: " << filename << endl;
     return false;
   }
 
-  std::string line;
+  string line;
   int lineNumber = 0;
-  std::vector<std::string> openTags;
-  std::regex tagRegex("<(/?[a-zA-Z0-9]+)([^>]*)>");
+  vector<string> openTags;
+  regex tagRegex("<(/?[a-zA-Z0-9]+)([^>]*)>");
 
-  while (std::getline(file, line)) {
+  while (getline(file, line)) {
     lineNumber++;
-    std::smatch match;
+    smatch match;
 
-    std::string::const_iterator searchStart(line.cbegin());
-    while (std::regex_search(searchStart, line.cend(), match, tagRegex)) {
-      std::string tag = match[1];
+    string::const_iterator searchStart(line.cbegin());
+    while (regex_search(searchStart, line.cend(), match, tagRegex)) {
+      string tag = match[1];
 
       if (tag[0] == '/') {
         if (openTags.empty() || openTags.back() != tag.substr(1)) {
-          std::cerr << "Error: Mismatched closing tag: " << tag
-                    << ", line: " << lineNumber << std::endl;
+          cerr << "Error: Mismatched closing tag: " << tag
+                    << ", line: " << lineNumber << endl;
           return false;
         }
         openTags.pop_back();
@@ -41,9 +43,9 @@ bool validateXML(const std::string &filename) {
 
     for (size_t i = 0; i < line.length(); ++i) {
       if (line[i] == '&' && line.substr(i, 5) != "&amp;") {
-        std::cerr << "Error: Invalid character '&' found without proper "
+        cerr << "Error: Invalid character '&' found without proper "
                      "escaping, line: "
-                  << lineNumber << std::endl;
+                  << lineNumber << endl;
         return false;
       }
 
@@ -51,32 +53,32 @@ bool validateXML(const std::string &filename) {
       for (size_t i = 0; i < line.length(); ++i) {
         if (line[i] == '<') {
           if (insideTag) {
-            std::cerr << "Error: Nested '<' found inside a tag, line: "
-                      << lineNumber << std::endl;
+            cerr << "Error: Nested '<' found inside a tag, line: "
+                      << lineNumber << endl;
             return false;
           }
           insideTag = true;
         } else if (line[i] == '>') {
           if (!insideTag) {
-            std::cerr
+            cerr
                 << "Error: Invalid character '>' found in text content, line: "
-                << lineNumber << std::endl;
+                << lineNumber << endl;
             return false;
           }
           insideTag = false;
         } else if (!insideTag && line[i] == '<') {
-          std::cerr
+          cerr
               << "Error: Invalid character '<' found in text content, line: "
-              << lineNumber << std::endl;
+              << lineNumber << endl;
           return false;
         }
       }
 
       if (line[i] == '>' && line.substr(i, 4) != "&gt;") {
-        if (i == 0 || !std::regex_search(line.substr(0, i + 1), tagRegex)) {
-          std::cerr << "Error: Invalid character '>' found without proper "
+        if (i == 0 || !regex_search(line.substr(0, i + 1), tagRegex)) {
+          cerr << "Error: Invalid character '>' found without proper "
                        "escaping, line: "
-                    << lineNumber << std::endl;
+                    << lineNumber << endl;
           return false;
         }
       }
@@ -84,23 +86,23 @@ bool validateXML(const std::string &filename) {
   }
 
   if (!openTags.empty()) {
-    std::cerr << "Error: Unclosed tags in XML file: " << filename << std::endl;
+    cerr << "Error: Unclosed tags in XML file: " << filename << endl;
     return false;
   }
 
   return true;
 }
 
-bool validateJSON(const std::string &filename) {
-  std::ifstream file(filename);
+bool validateJSON(const string &filename) {
+  ifstream file(filename);
   if (!file.is_open()) {
-    std::cerr << "Error: Could not open JSON file: " << filename << std::endl;
+    cerr << "Error: Could not open JSON file: " << filename << endl;
     return false;
   }
 
-  std::stringstream buffer;
+  stringstream buffer;
   buffer << file.rdbuf();
-  std::string jsonContent = buffer.str();
+  string jsonContent = buffer.str();
 
   int openBrackets = 0;
   int openSquareBrackets = 0;
@@ -119,44 +121,44 @@ bool validateJSON(const std::string &filename) {
       lineNumber++;
 
     if (openBrackets < 0 || openSquareBrackets < 0) {
-      std::cerr << "Error: Unbalanced brackets in JSON file, line "
-                << lineNumber << ": " << filename << std::endl;
+      cerr << "Error: Unbalanced brackets in JSON file, line "
+                << lineNumber << ": " << filename << endl;
       return false;
     }
   }
 
   if (openBrackets != 0 || openSquareBrackets != 0) {
-    std::cerr << "Error: Unbalanced brackets in JSON file: " << filename
-              << std::endl;
+    cerr << "Error: Unbalanced brackets in JSON file: " << filename
+              << endl;
     return false;
   }
 
   return true;
 }
 
-bool validateCSV(const std::string &filename) {
-  std::ifstream file(filename);
+bool validateCSV(const string &filename) {
+  ifstream file(filename);
   if (!file.is_open()) {
-    std::cerr << "Error: Could not open CSV file: " << filename << std::endl;
+    cerr << "Error: Could not open CSV file: " << filename << endl;
     return false;
   }
 
-  std::string line;
+  string line;
   int expectedColumnCount = -1;
   int lineNumber = 0;
 
-  while (std::getline(file, line)) {
+  while (getline(file, line)) {
     lineNumber++;
-    std::stringstream lineStream(line);
-    std::string cell;
+    stringstream lineStream(line);
+    string cell;
     int columnCount = 0;
 
-    while (std::getline(lineStream, cell, ',')) {
+    while (getline(lineStream, cell, ',')) {
       columnCount++;
       for (char c : cell) {
         if (c < 32 && c != '\t' && c != '\r' && c != '\n') {
-          std::cerr << "Error: Invalid character in CSV file: " << filename
-                    << ", line " << lineNumber << std::endl;
+          cerr << "Error: Invalid character in CSV file: " << filename
+                    << ", line " << lineNumber << endl;
           return false;
         }
       }
@@ -165,8 +167,8 @@ bool validateCSV(const std::string &filename) {
     if (expectedColumnCount == -1) {
       expectedColumnCount = columnCount;
     } else if (columnCount != expectedColumnCount) {
-      std::cerr << "Error: Inconsistent column count in CSV file: " << filename
-                << ", line " << lineNumber << std::endl;
+      cerr << "Error: Inconsistent column count in CSV file: " << filename
+                << ", line " << lineNumber << endl;
       return false;
     }
   }
@@ -176,16 +178,16 @@ bool validateCSV(const std::string &filename) {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <filename1> [filename2] ..."
-              << std::endl;
+    cerr << "Usage: " << argv[0] << " <filename1> [filename2] ..."
+              << endl;
     return 1;
   }
 
   for (int i = 1; i < argc; ++i) {
-    std::string filename = argv[i];
-    std::string extension = filename.substr(filename.find_last_of(".") + 1);
+    string filename = argv[i];
+    string extension = filename.substr(filename.find_last_of(".") + 1);
 
-    std::cout << "Validating: " << filename << std::endl;
+    cout << "Validating: " << filename << endl;
 
     bool isValid = false;
     if (extension == "xml" || extension == "XML") {
@@ -195,13 +197,13 @@ int main(int argc, char *argv[]) {
     } else if (extension == "csv" || extension == "CSV") {
       isValid = validateCSV(filename);
     } else {
-      std::cerr << "Error: Unsupported file type: " << extension << std::endl;
+      cerr << "Error: Unsupported file type: " << extension << endl;
       continue;
     }
 
-    std::cout << "Validation: " << (isValid ? "Success" : "Failure")
-              << std::endl;
-    std::cout << std::setfill('-') << std::setw(30) << "-" << std::endl;
+    cout << "Validation: " << (isValid ? "Success" : "Failure")
+              << endl;
+    cout << setfill('-') << setw(30) << "-" << endl;
   }
 
   return 0;
