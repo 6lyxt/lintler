@@ -1,7 +1,7 @@
 <root>
   <item id="1">
     <name>Example Item</name>
-    <value>123 & 123</value>
+    <value>123</value>
   </item>
   <item id="2">
     <name>Another Item</name>
